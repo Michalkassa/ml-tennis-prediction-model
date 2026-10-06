@@ -13,7 +13,7 @@ A machine learning project that predicts the winner of a men's professional tenn
 
 - Source: [Jeff Sackmann's tennis_atp dataset](https://github.com/JeffSackmann/tennis_atp)
 - `data/raw/`: one CSV of match results per year
-- `data/processed/`: cleaned features (`tennis_features.csv`) and labels (`tennis_labels.csv`)
+- `data/processed/`: cleaned features (`tennis_features.csv`)
 - Matches with missing player or match stats are dropped
 
 ## Features
@@ -30,13 +30,19 @@ Each match is described as differences between the two players:
 ## Project structure
 
 - `src/data.py`: loads the raw CSVs, cleans them and builds the features
-- `src/model.py`: trains the decision tree, reports test accuracy and saves it to `models/tennis_model.joblib`
-- `src/predict.py`: loads the saved model and predicts the matches listed at the bottom of the file
+- `src/dataset.py`: builds the player 1 wins labels and the train/test split
+- `src/estimators/`: one file per model, with its search spaces and `build()`
+- `src/tuning/`: one file per tuning method, each with `tune()`
+- `src/train.py`: trains one model with one tuning method and saves it to `models/runs/<model>/<tuner>/<timestamp>/`
+- `src/compare.py`: compares every saved run
+- `src/predict.py`: loads a saved model and predicts the matches listed at the bottom of the file
 
 ## Getting started
 
 - Install [uv](https://docs.astral.sh/uv/), then install the dependencies: `uv sync`
-- Run `uv run python src/model.py` to train and save the model (about 63% test accuracy)
+- Run `uv run python src/train.py --model decision_tree --tuner grid_search` to train and save a model
+- Run `uv run python src/compare.py` to compare saved runs
+- Set `MODEL_PATH` in `src/predict.py` to the run you want to use
 - Run `uv run python src/predict.py` to predict the matches listed in `src/predict.py`
 
 ## Predicting upcoming matches

@@ -42,7 +42,5 @@ final_data = pd.DataFrame({
 })
 
 X = final_data[["surface", "best_of", "draw_size", "rank_diff", "rank_points_diff", "age_diff", "height_diff"]]
-Y = final_data[["winner_id"]]
 
 X.to_csv(ROOT / "data" / "processed" / "tennis_features.csv", index=False)
-Y.to_csv(ROOT / "data" / "processed" / "tennis_labels.csv", index=False)

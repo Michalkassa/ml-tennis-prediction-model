@@ -9,7 +9,7 @@ import joblib
 import pandas as pd
 
 ROOT = Path(__file__).resolve().parent.parent
-MODEL_PATH = ROOT / "models" / "tennis_model.joblib"
+MODEL_PATH = ROOT / "models" / "runs" / "<model>" / "<tuner>" / "<timestamp>" / "model.joblib"
 
 FEATURES = ["surface", "best_of", "rank_diff", "rank_points_diff", "age_diff", "height_diff"]
 SURFACES = {"hard": 0, "clay": 1, "grass": 2}
@@ -19,16 +19,13 @@ model = joblib.load(MODEL_PATH)
 
 
 def player(name, rank, rank_points, age, height):
-    """Describe one player. Height is in cm, age in years."""
     return {"name": name, "rank": rank, "rank_points": rank_points, "age": age, "height": height}
 
 
 def predict_match(player1, player2, surface, best_of=3):
-    """Return the probability (0 to 1) that player1 beats player2."""
     if surface.lower() not in SURFACES:
         raise ValueError(f"surface must be one of: {', '.join(SURFACES)}")
 
-    # Same features model.py trains on: every difference is player 1 minus player 2.
     features = pd.DataFrame([{
         "surface": SURFACES[surface.lower()],
         "best_of": best_of,
@@ -42,7 +39,6 @@ def predict_match(player1, player2, surface, best_of=3):
 
 
 def show(player1, player2, surface, best_of=3):
-    """Print the predicted winner of one match."""
     p1_win = predict_match(player1, player2, surface, best_of)
     winner, prob = (player1, p1_win) if p1_win >= 0.5 else (player2, 1 - p1_win)
     print(f"{player1['name']} vs {player2['name']} ({surface}, best of {best_of})"
