@@ -31,22 +31,29 @@ Each match is described as differences between the two players:
 
 - `src/data.py`: loads the raw CSVs, cleans them and builds the features
 - `src/model.py`: trains the decision tree, reports test accuracy and saves it to `models/tennis_model.joblib`
-- `src/predict.py`: loads the saved model and predicts upcoming matches
-- `data/upcoming_matches.csv`: example input for `predict.py`
+- `src/predict.py`: loads the saved model and predicts the matches listed at the bottom of the file
 
 ## Getting started
 
 - Install [uv](https://docs.astral.sh/uv/), then install the dependencies: `uv sync`
 - Run `uv run python src/model.py` to train and save the model (about 63% test accuracy)
-- Run `uv run python src/predict.py` to predict the matches in `data/upcoming_matches.csv`
+- Run `uv run python src/predict.py` to predict the matches listed in `src/predict.py`
 
 ## Predicting upcoming matches
 
-- Add one row per match to `data/upcoming_matches.csv` (or any CSV with the same columns)
-- Columns: `player1`, `player2`, `surface` (Hard/Clay/Grass), `best_of`, and for each player their current ATP `rank`, `rank_points`, `age` and `height` in cm (e.g. `player1_rank`, `player2_rank`)
-- Run `uv run python src/predict.py path/to/your.csv`
-- The output shows the predicted winner and the probability that player 1 wins
-- From Python: `from predict import predict`, then call `predict(df)` with a DataFrame that has the same columns
+- Open `src/predict.py` and add each match to the `MATCHES` list at the bottom:
+
+  ```python
+  (
+      player("Player A", rank=45, rank_points=1200, age=24.5, height=188),
+      player("Player B", rank=120, rank_points=520, age=29.1, height=180),
+      "hard", 3,   # surface (hard/clay/grass), best_of
+  ),
+  ```
+
+- Run `uv run python src/predict.py`
+- Each line of output shows the predicted winner and their win probability
+- For one match, call `predict_match(player1, player2, surface, best_of)`, which returns the probability that player 1 wins
 
 ## License
 

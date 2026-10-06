@@ -1,10 +1,8 @@
 """Predict upcoming tennis matches with the model trained in model.py.
 
-Usage:
-    python src/predict.py                          # uses data/upcoming_matches.csv
-    python src/predict.py path/to/matches.csv
+To predict a match, add it to MATCHES at the bottom of this file, then run:
+    uv run python src/predict.py
 """
-import sys
 from pathlib import Path
 
 import joblib
@@ -12,39 +10,60 @@ import pandas as pd
 
 ROOT = Path(__file__).resolve().parent.parent
 MODEL_PATH = ROOT / "models" / "tennis_model.joblib"
-DEFAULT_MATCHES = ROOT / "data" / "upcoming_matches.csv"
 
 FEATURES = ["surface", "best_of", "rank_diff", "rank_points_diff", "age_diff", "height_diff"]
 SURFACES = {"hard": 0, "clay": 1, "grass": 2}
 
-
-def build_features(matches):
-    """Turn one row per match (both players' stats) into the model's features."""
-    return pd.DataFrame({
-        "surface": matches["surface"].str.lower().map(SURFACES),
-        "best_of": matches["best_of"],
-        "rank_diff": matches["player1_rank"] - matches["player2_rank"],
-        "rank_points_diff": matches["player1_rank_points"] - matches["player2_rank_points"],
-        "age_diff": matches["player1_age"] - matches["player2_age"],
-        "height_diff": matches["player1_height"] - matches["player2_height"],
-    })[FEATURES]
+# Load the model once, when the script starts.
+model = joblib.load(MODEL_PATH)
 
 
-def predict(matches):
-    """Add predicted winner and win probability columns to a matches DataFrame."""
-    model = joblib.load(MODEL_PATH)
-    features = build_features(matches)
+def player(name, rank, rank_points, age, height):
+    """Describe one player. Height is in cm, age in years."""
+    return {"name": name, "rank": rank, "rank_points": rank_points, "age": age, "height": height}
 
-    if features["surface"].isna().any():
+
+def predict_match(player1, player2, surface, best_of=3):
+    """Return the probability (0 to 1) that player1 beats player2."""
+    if surface.lower() not in SURFACES:
         raise ValueError(f"surface must be one of: {', '.join(SURFACES)}")
 
-    p1_win = model.predict_proba(features)[:, 1]
-    result = matches[["player1", "player2"]].copy()
-    result["winner"] = matches["player1"].where(p1_win >= 0.5, matches["player2"])
-    result["player1_win_prob"] = p1_win.round(3)
-    return result
+    # Same features model.py trains on: every difference is player 1 minus player 2.
+    features = pd.DataFrame([{
+        "surface": SURFACES[surface.lower()],
+        "best_of": best_of,
+        "rank_diff": player1["rank"] - player2["rank"],
+        "rank_points_diff": player1["rank_points"] - player2["rank_points"],
+        "age_diff": player1["age"] - player2["age"],
+        "height_diff": player1["height"] - player2["height"],
+    }])[FEATURES]
 
+    return model.predict_proba(features)[0, 1]
+
+
+def show(player1, player2, surface, best_of=3):
+    """Print the predicted winner of one match."""
+    p1_win = predict_match(player1, player2, surface, best_of)
+    winner, prob = (player1, p1_win) if p1_win >= 0.5 else (player2, 1 - p1_win)
+    print(f"{player1['name']} vs {player2['name']} ({surface}, best of {best_of})"
+          f"  ->  {winner['name']} wins ({prob:.0%})")
+
+
+# ---------------------------------------------------------------------------
+# Upcoming matches: edit below
+#
+#   player(name, rank, rank_points, age, height_cm)
+#   (player1, player2, surface, best_of)    surface: "hard", "clay" or "grass"
+# ---------------------------------------------------------------------------
+
+MATCHES = [
+    (
+        player("ADM", rank=8, rank_points=3430, age=27, height=183),
+        player("Djokovic", rank=10, rank_points=3310, age=39, height=188),
+        "hard", 3,
+    ),
+]
 
 if __name__ == "__main__":
-    path = sys.argv[1] if len(sys.argv) > 1 else DEFAULT_MATCHES
-    print(predict(pd.read_csv(path)).to_string(index=False))
+    for match in MATCHES:
+        show(*match)

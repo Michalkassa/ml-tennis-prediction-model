@@ -46,7 +46,7 @@ print(y.value_counts())
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=99)
 
 model = DecisionTreeClassifier(
-    max_depth=5,
+    max_depth=6,
     min_samples_split=100,
     min_samples_leaf=50,
     random_state=42,

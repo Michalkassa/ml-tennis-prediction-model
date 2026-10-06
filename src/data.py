@@ -18,25 +18,31 @@ for file in files:
 data = pd.concat(total_raw_data, ignore_index=True)
 pd.set_option('display.max_columns', None)
 
-#remove empty data
-
 data_filtered = data.dropna(subset=[
     "winner_id", "loser_id", "winner_ht", "loser_ht","winner_age", "loser_age",
     "w_ace","w_df","w_svpt","w_1stIn","w_1stWon","w_2ndWon","w_SvGms","w_bpSaved","w_bpFaced",
     "l_ace","l_df","l_svpt","l_1stIn","l_1stWon","l_2ndWon","l_SvGms","l_bpSaved","l_bpFaced",
     "surface","winner_rank_points","loser_rank_points", "winner_rank", "loser_rank"
 ])
-data_filtered = data_filtered.reset_index
+data_filtered = data_filtered.reset_index(drop=True)
 print(data_filtered)
 
-final_data["WINNER_ID"] = final_data["WINNER_ID"]
-final_data["LOSER_ID"] = final_data["loser_id"]
-final_data["ATP_POINT_DIFF"] = final_data["winner_rank_points"] - final_data["loser_rank_points"]
-final_data["AGE_DIFF"] = final_data["winner_age"] - final_data["loser_age"]
-final_data["HEIGHT_DIFF"] = final_data["winner_ht"] - final_data["loser_ht"]
-final_data["ATP_RANK_DIFF"] = final_data["winner_rank"] - final_data["loser_rank"]
-final_data["BEST_OF"] = final_data["best_of"]
-final_data["draw_size"] = final_data["DRAW_SIZE"]
+SURFACES = {"hard": 0, "clay": 1, "grass": 2}
+
+final_data = pd.DataFrame({
+    "winner_id": data_filtered["winner_id"],
+    "loser_id": data_filtered["loser_id"],
+    "surface": data_filtered["surface"].str.lower().map(SURFACES),
+    "best_of": data_filtered["best_of"],
+    "draw_size": data_filtered["draw_size"],
+    "rank_diff": data_filtered["winner_rank"] - data_filtered["loser_rank"],
+    "rank_points_diff": data_filtered["winner_rank_points"] - data_filtered["loser_rank_points"],
+    "age_diff": data_filtered["winner_age"] - data_filtered["loser_age"],
+    "height_diff": data_filtered["winner_ht"] - data_filtered["loser_ht"],
+})
+
+X = final_data[["surface", "best_of", "draw_size", "rank_diff", "rank_points_diff", "age_diff", "height_diff"]]
+Y = final_data[["winner_id"]]
 
 X.to_csv(ROOT / "data" / "processed" / "tennis_features.csv", index=False)
 Y.to_csv(ROOT / "data" / "processed" / "tennis_labels.csv", index=False)
